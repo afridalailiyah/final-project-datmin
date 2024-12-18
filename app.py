@@ -1,105 +1,113 @@
 import streamlit as st
 import pandas as pd
-from nltk.tag import CRFTagger
-from textblob import TextBlob
+import pickle
+import requests
+from io import BytesIO
+from sklearn.metrics import accuracy_score, classification_report
 import plotly.express as px
-import urllib.request  # Untuk mengunduh file
 
-# Unduh model CRF jika belum ada
-MODEL_URL = "https://raw.githubusercontent.com/dhavinaocxa/latihan-datmin/main/all_indo_man_tag_corpus_model.crf.tagger"
-MODEL_PATH = "all_indo_man_tag_corpus_model.crf.tagger"
+# Fungsi untuk mengunduh file dan memuat dengan pickle
+def load_model_from_url(url):
+    response = requests.get(url)
+    if response.status_code == 200:
+        return pickle.load(BytesIO(response.content))
+    else:
+        st.error(f"Gagal mengunduh file dari URL: {url}")
+        return None
 
-try:
-    with open(MODEL_PATH, "r") as f:
-        pass
-except FileNotFoundError:
-    st.write("Mengunduh model CRF...")
-    urllib.request.urlretrieve(MODEL_URL, MODEL_PATH)
+# Fungsi utama untuk aplikasi
+def main():
+    # Title untuk aplikasi
+    st.title("Analisis Sentimen SpotifyWrapped 2024")
 
-# Judul aplikasi
-st.title("Analisis Sentimen")
+    # Bagian untuk upload file
+    uploaded_file = st.file_uploader("Upload file CSV Anda", type=["csv"])
+    if uploaded_file is not None:
+        # Load data
+        data = pd.read_csv(uploaded_file)
+        st.write("Data yang diunggah:")
+        st.write(data)
 
-# Upload file
-uploaded_file = st.file_uploader("Upload dataset CSV Anda", type=["csv"])
-if uploaded_file is not None:
-    try:
-        # Baca file CSV
-        data = pd.read_csv(uploaded_file, encoding='ISO-8859-1')
-        st.write("Dataset asli:")
-        st.dataframe(data.head())
+        # Load model dan vectorizer dari URL
+        model_url = "https://raw.githubusercontent.com/dhavinaocxa/fp-datmin/main/rf_model.pkl"
+        vectorizer_url = "https://raw.githubusercontent.com/dhavinaocxa/fp-datmin/main/vectorizer.pkl"
 
-        # Asumsi kolom tweet bernama 'tweet'
-        if 'tweet' in data.columns:
-            tweets = data['tweet']
+        model = load_model_from_url(model_url)
+        vectorizer = load_model_from_url(vectorizer_url)
 
-            # POS Tagging
-            st.write("Proses POS Tagging...")
-            ct = CRFTagger()
-            ct.set_model_file(MODEL_PATH)
+        # Pastikan model dan vectorizer berhasil di-load
+        if model and vectorizer:
+            # Validasi kolom 'stemming_data'
+            if 'stemming_data' in data.columns:
+                # Transformasi data menggunakan vectorizer
+                X_test = vectorizer.transform(data['stemming_data'])
 
-            # Tagging setiap tweet
-            tagged_tweets = [ct.tag_sents([tweet.split()])[0] for tweet in tweets]
+                # Prediksi Sentimen
+                if st.button("Prediksi Sentimen"):
+                    # Prediksi dengan model yang sudah dilatih
+                    predictions = model.predict(X_test)
 
-            # Tambahkan hasil POS tagging ke dataset
-            data['pos_tagging'] = tagged_tweets
+                    # Simpan hasil prediksi di session_state
+                    st.session_state['predictions'] = predictions
+                    st.session_state['data'] = data
+                    st.session_state['X_test'] = X_test
 
-            # Filter hanya nouns
-            filtered_tweets = []
-            for tagged in tagged_tweets:
-                nouns = [word for word, tag in tagged if tag in ['NN', 'NNS', 'NNP', 'NNPS']]
-                filtered_tweets.append(" ".join(nouns))
+                    # Tambahkan hasil prediksi ke data
+                    data['Predicted Sentiment'] = predictions
 
-            data['filtered_nouns'] = filtered_tweets
+                    # Simpan hasil prediksi di session_state
+                    st.session_state['results'] = data
 
-            # Analisis Sentimen menggunakan TextBlob
-            st.write("Proses Analisis Sentimen...")
-            sentiments = []
-            for tweet in data['filtered_nouns']:
-                analysis = TextBlob(tweet)
-                if analysis.sentiment.polarity > 0:
-                    sentiments.append("Positive")
-                elif analysis.sentiment.polarity < 0:
-                    sentiments.append("Negative")
-                else:
-                    sentiments.append("Neutral")
+                    # Evaluasi Akurasi jika ada label 'sentiment'
+                    if 'sentiment' in data.columns:
+                        accuracy = accuracy_score(data['sentiment'], predictions)
+                        report_dict = classification_report(data['sentiment'], predictions, output_dict=True)
+                        report_df = pd.DataFrame(report_dict).transpose()  # Konversi ke DataFrame
 
-            # Tambahkan hasil sentimen ke dataset
-            data['sentiment'] = sentiments
+                        st.session_state['accuracy'] = accuracy
+                        st.session_state['report_df'] = report_df
+                    else:
+                        st.session_state['accuracy'] = None
+                        st.session_state['report_df'] = None
 
+                # Tampilkan hasil prediksi dan evaluasi jika tersedia di session_state
+                if 'predictions' in st.session_state:
+                    data = st.session_state['data']
+                    predictions = st.session_state['predictions']
+                    data['Predicted Sentiment'] = predictions
 
-            # Tampilkan dataset hasil tagging dan sentimen
-            st.write("Dataset dengan hasil POS tagging dan analisis sentimen:")
-            st.dataframe(data[['tweet', 'pos_tagging', 'filtered_nouns', 'sentiment']])
+                    st.write("Hasil Prediksi Sentimen:")
+                    st.write(data[['stemming_data', 'Predicted Sentiment']])
 
+                    # Visualisasi distribusi sentimen
+                    sentiment_counts = data['Predicted Sentiment'].value_counts()
+                    fig_bar = px.bar(
+                        sentiment_counts,
+                        x=sentiment_counts.index,
+                        y=sentiment_counts.values,
+                        labels={'x': 'Sentimen', 'y': 'Jumlah'},
+                        title="Distribusi Sentimen"
+                    )
+                    st.plotly_chart(fig_bar)
 
-            # Distribusi hasil sentimen
-            sentiment_counts = data['sentiment'].value_counts().reset_index()
-            sentiment_counts.columns = ['Sentimen', 'Jumlah']
-            
-            # Membuat chart interaktif
-            fig = px.bar(
-                sentiment_counts,
-                x='Sentimen',
-                y='Jumlah',
-                color='Sentimen',
-                title='Distribusi Sentimen dari Tweet',
-                labels={'Jumlah': 'Jumlah Tweet'},
-                text='Jumlah',
-                color_discrete_map={'positif': 'green', 'negatif': 'red', 'netral': 'blue'}  # Warna khusus
-            )
-            
-            # Menampilkan chart di Streamlit
-            st.plotly_chart(fig)
+                    # Evaluasi akurasi jika tersedia
+                    if st.session_state['accuracy'] is not None:
+                        st.success(f"Akurasi Model: {st.session_state['accuracy']:.2%}")
+                        st.write("Laporan Klasifikasi:")
+                        st.table(st.session_state['report_df'])  # Tampilkan laporan dalam bentuk tabel
+                    else:
+                        st.warning("Kolom 'sentiment' tidak ditemukan. Tidak dapat menghitung akurasi.")
 
-            # Download dataset hasil
-            csv = data.to_csv(index=False, encoding='utf-8')
-            st.download_button(
-                label="Download Dataset Hasil",
-                data=csv,
-                file_name="sentiment_analysis_tweets.csv",
-                mime="text/csv"
-            )
-        else:
-            st.warning("Dataset Anda harus memiliki kolom 'tweet'.")
-    except Exception as e:
-        st.error(f"Terjadi kesalahan: {str(e)}")
+                    # Tombol untuk mengunduh hasil prediksi
+                    st.download_button(
+                        label="Download Hasil Prediksi",
+                        data=data.to_csv(index=False),
+                        file_name="hasil_prediksi.csv",
+                        mime="text/csv"
+                    )
+
+            else:
+                st.error("Kolom 'stemming_data' tidak ditemukan dalam file yang diunggah.")
+
+if __name__ == '__main__':
+    main()
