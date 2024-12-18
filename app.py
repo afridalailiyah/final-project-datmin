@@ -37,10 +37,10 @@ def main():
 
         # Pastikan model dan vectorizer berhasil di-load
         if model and vectorizer:
-            # Validasi kolom 'stemming_data'
-            if 'stemming_data' in data.columns:
+            # Validasi kolom 'stemming'
+            if 'stemming' in data.columns:
                 # Transformasi data menggunakan vectorizer
-                X_test = vectorizer.transform(data['stemming_data'])
+                X_test = vectorizer.transform(data['stemming'])
 
                 # Prediksi Sentimen
                 if st.button("Prediksi Sentimen"):
@@ -77,7 +77,7 @@ def main():
                     data['Predicted Sentiment'] = predictions
 
                     st.write("Hasil Prediksi Sentimen:")
-                    st.write(data[['stemming_data', 'Predicted Sentiment']])
+                    st.write(data[['stemming', 'Predicted Sentiment']])
 
                     # Visualisasi distribusi sentimen
                     sentiment_counts = data['Predicted Sentiment'].value_counts()
@@ -107,7 +107,7 @@ def main():
                     )
 
             else:
-                st.error("Kolom 'stemming_data' tidak ditemukan dalam file yang diunggah.")
+                st.error("Kolom 'stemming' tidak ditemukan dalam file yang diunggah.")
 
 if __name__ == '__main__':
     main()
