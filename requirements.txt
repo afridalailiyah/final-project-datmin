@@ -1,6 +1,6 @@
 streamlit
 pandas
-scikit-learn
-nltk
-textblob
+scikit-learn==1.5.2
+numpy
+requests
 plotly
