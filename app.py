@@ -12,7 +12,7 @@ def load_model_from_url(url):
     if response.status_code == 200:
         return pickle.load(BytesIO(response.content))
     else:
-        st.error(f"Gagal mengunduh file dari URL: {url}")
+        st.error(f"Gagal mengunduh file dari URL {url}")
         return None
 
 # Fungsi utama untuk aplikasi
@@ -25,7 +25,7 @@ def main():
     if uploaded_file is not None:
         # Load data
         data = pd.read_csv(uploaded_file)
-        st.subheader("Data yang diunggah:")
+        st.subheader("Data yang diunggah")
         st.write(data)
 
         # Load model dan vectorizer dari URL
@@ -76,7 +76,7 @@ def main():
                     predictions = st.session_state['predictions']
                     data['predicted sentiment'] = predictions
 
-                    st.subheader("Hasil Prediksi Sentimen:")
+                    st.subheader("Hasil Prediksi Sentimen")
                     st.write(data[['stemming', 'predicted sentiment']])
 
                     # Visualisasi distribusi sentimen
@@ -92,8 +92,8 @@ def main():
 
                     # Evaluasi akurasi jika tersedia
                     if st.session_state['accuracy'] is not None:
-                        st.success(f"Akurasi Model: {st.session_state['accuracy']:.2%}")
-                        st.subheader("Laporan Klasifikasi:")
+                        st.success(f"Akurasi Model {st.session_state['accuracy']:.2%}")
+                        st.subheader("Hasil Klasifikasi")
                         st.table(st.session_state['report_df'])  # Tampilkan laporan dalam bentuk tabel
                     else:
                         st.warning("Kolom 'sentiment' tidak ditemukan. Tidak dapat menghitung akurasi.")
