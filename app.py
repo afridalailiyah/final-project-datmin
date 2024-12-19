@@ -29,7 +29,7 @@ def main():
         st.write(data)
 
         # Load model dan vectorizer dari URL
-        model_url = "https://raw.githubusercontent.com/afridalailiyah/final-project-datmin/main/rf_model.pkl"
+        model_url = "https://raw.githubusercontent.com/afridalailiyah/final-project-datmin/main/svm_model.pkl"
         vectorizer_url = "https://raw.githubusercontent.com/afridalailiyah/final-project-datmin/main/vectorizer.pkl"
 
         model = load_model_from_url(model_url)
