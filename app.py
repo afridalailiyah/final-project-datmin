@@ -18,10 +18,10 @@ def load_model_from_url(url):
 # Fungsi utama untuk aplikasi
 def main():
     # Title untuk aplikasi
-    st.title("Analisis Sentimen SpotifyWrapped 2024")
+    st.title("Analisis Sentimen Clash of Champion Ruangguru")
 
     # Bagian untuk upload file
-    uploaded_file = st.file_uploader("Upload file CSV Anda", type=["csv"])
+    uploaded_file = st.file_uploader("Upload file CSV", type=["csv"])
     if uploaded_file is not None:
         # Load data
         data = pd.read_csv(uploaded_file)
