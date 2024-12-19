@@ -25,7 +25,7 @@ def main():
     if uploaded_file is not None:
         # Load data
         data = pd.read_csv(uploaded_file)
-        st.write("Data yang diunggah:")
+        st.subheader("Data yang diunggah:")
         st.write(data)
 
         # Load model dan vectorizer dari URL
@@ -76,8 +76,8 @@ def main():
                     predictions = st.session_state['predictions']
                     data['Predicted Sentiment'] = predictions
 
-                    st.write("Hasil Prediksi Sentimen:")
-                    st.write(data[['stemming', 'Predicted Sentiment']])
+                    st.subheader("Hasil Prediksi Sentimen:")
+                    st.write(data[['Stemming', 'Predicted Sentiment']])
 
                     # Visualisasi distribusi sentimen
                     sentiment_counts = data['Predicted Sentiment'].value_counts()
@@ -93,7 +93,7 @@ def main():
                     # Evaluasi akurasi jika tersedia
                     if st.session_state['accuracy'] is not None:
                         st.success(f"Akurasi Model: {st.session_state['accuracy']:.2%}")
-                        st.write("Laporan Klasifikasi:")
+                        st.subheader("Laporan Klasifikasi:")
                         st.table(st.session_state['report_df'])  # Tampilkan laporan dalam bentuk tabel
                     else:
                         st.warning("Kolom 'sentiment' tidak ditemukan. Tidak dapat menghitung akurasi.")
