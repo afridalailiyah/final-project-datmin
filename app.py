@@ -38,9 +38,9 @@ def main():
         # Pastikan model dan vectorizer berhasil di-load
         if model and vectorizer:
             # Validasi kolom 'stemming'
-            if 'Stemming' in data.columns:
+            if 'stemming' in data.columns:
                 # Transformasi data menggunakan vectorizer
-                X_test = vectorizer.transform(data['Stemming'])
+                X_test = vectorizer.transform(data['stemming'])
 
                 # Prediksi Sentimen
                 if st.button("Prediksi Sentimen"):
@@ -53,7 +53,7 @@ def main():
                     st.session_state['X_test'] = X_test
 
                     # Tambahkan hasil prediksi ke data
-                    data['Predicted Sentiment'] = predictions
+                    data['predicted sentiment'] = predictions
 
                     # Simpan hasil prediksi di session_state
                     st.session_state['results'] = data
@@ -74,13 +74,13 @@ def main():
                 if 'predictions' in st.session_state:
                     data = st.session_state['data']
                     predictions = st.session_state['predictions']
-                    data['Predicted Sentiment'] = predictions
+                    data['predicted sentiment'] = predictions
 
                     st.subheader("Hasil Prediksi Sentimen:")
-                    st.write(data[['Stemming', 'Predicted Sentiment']])
+                    st.write(data[['stemming', 'predicted sentiment']])
 
                     # Visualisasi distribusi sentimen
-                    sentiment_counts = data['Predicted Sentiment'].value_counts()
+                    sentiment_counts = data['predicted sentiment'].value_counts()
                     fig_bar = px.bar(
                         sentiment_counts,
                         x=sentiment_counts.index,
@@ -107,7 +107,7 @@ def main():
                     )
 
             else:
-                st.error("Kolom 'Stemming' tidak ditemukan dalam file yang diunggah.")
+                st.error("Kolom 'stemming' tidak ditemukan dalam file yang diunggah.")
 
 if __name__ == '__main__':
     main()
