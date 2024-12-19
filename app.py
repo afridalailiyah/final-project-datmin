@@ -38,9 +38,9 @@ def main():
         # Pastikan model dan vectorizer berhasil di-load
         if model and vectorizer:
             # Validasi kolom 'stemming'
-            if 'stemming' in data.columns:
+            if 'Stemming' in data.columns:
                 # Transformasi data menggunakan vectorizer
-                X_test = vectorizer.transform(data['stemming'])
+                X_test = vectorizer.transform(data['Stemming'])
 
                 # Prediksi Sentimen
                 if st.button("Prediksi Sentimen"):
@@ -107,7 +107,7 @@ def main():
                     )
 
             else:
-                st.error("Kolom 'stemming' tidak ditemukan dalam file yang diunggah.")
+                st.error("Kolom 'Stemming' tidak ditemukan dalam file yang diunggah.")
 
 if __name__ == '__main__':
     main()
