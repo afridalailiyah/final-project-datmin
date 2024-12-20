@@ -110,15 +110,23 @@ def main():
                 st.subheader("Cari Kata dan Prediksi Sentimen")
                 search_query = st.text_input("Masukkan kata/frase untuk diprediksi")
                 if search_query:
-                    # Transformasi kata/frase menggunakan vectorizer
-                    query_vectorized = vectorizer.transform([search_query])
+                    # Cari kata/frase dalam data yang diunggah
+                    matching_rows = data[data['stemming'].str.contains(search_query, case=False, na=False)]
 
-                    # Prediksi sentimen kata/frase
-                    query_prediction = model.predict(query_vectorized)[0]
+                    if not matching_rows.empty:
+                        st.write("Hasil pencarian dalam data:")
+                        st.write(matching_rows[['stemming', 'predicted sentiment']])
+                    else:
+                        # Transformasi kata/frase menggunakan vectorizer jika tidak ditemukan di data
+                        query_vectorized = vectorizer.transform([search_query])
 
-                    # Tampilkan hasil prediksi
-                    st.write(f"Kata/frase: **{search_query}**")
-                    st.write(f"Prediksi Sentimen: **{query_prediction}**")
+                        # Prediksi sentimen kata/frase
+                        query_prediction = model.predict(query_vectorized)[0]
+
+                        # Tampilkan hasil prediksi
+                        st.write(f"Kata/frase: **{search_query}**")
+                        st.write(f"Prediksi Sentimen: **{query_prediction}**")
+            else:
             else:
                 st.error("Kolom 'stemming' tidak ditemukan dalam file yang diunggah.")
 
