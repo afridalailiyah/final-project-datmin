@@ -39,60 +39,56 @@ def main():
         if model and vectorizer:
             # Validasi kolom 'stemming'
             if 'stemming' in data.columns:
-                # Cek apakah ada nilai kosong atau teks kosong di kolom 'stemming'
-                if data['stemming'].isnull().any() or data['stemming'].str.strip().eq("").any():
-                    st.warning("Terdapat baris dengan data kosong di kolom 'stemming'. Baris ini akan diberi keterangan 'Prediksi sentimen tidak ada'.")
-
                 # Transformasi data menggunakan vectorizer
-                data['stemming'] = data['stemming'].fillna("").replace(r"^\s*$", "NA", regex=True)
+                X_test = vectorizer.transform(data['stemming'])
 
+                # Prediksi Sentimen
                 if st.button("Prediksi Sentimen"):
-                    # Prediksi Sentimen
-                    predictions = []
-                    for text in data['stemming']:
-                        if text == "NA":
-                            predictions.append("Prediksi sentimen tidak ada")
-                        else:
-                            transformed_text = vectorizer.transform([text])
-                            predictions.append(model.predict(transformed_text)[0])
+                    # Prediksi dengan model yang sudah dilatih
+                    predictions = model.predict(X_test)
+
+                    # Simpan hasil prediksi di session_state
+                    st.session_state['predictions'] = predictions
+                    st.session_state['data'] = data
+                    st.session_state['X_test'] = X_test
 
                     # Tambahkan hasil prediksi ke data
                     data['predicted sentiment'] = predictions
+
+                    # Simpan hasil prediksi di session_state
                     st.session_state['results'] = data
 
                     # Evaluasi Akurasi jika ada label 'sentiment'
                     if 'sentiment' in data.columns:
-                        valid_rows = data[data['predicted sentiment'] != "Prediksi sentimen tidak ada"]
-                        if not valid_rows.empty:
-                            accuracy = accuracy_score(valid_rows['sentiment'], valid_rows['predicted sentiment'])
-                            report_dict = classification_report(valid_rows['sentiment'], valid_rows['predicted sentiment'], output_dict=True)
-                            report_df = pd.DataFrame(report_dict).transpose()
-                            st.session_state['accuracy'] = accuracy
-                            st.session_state['report_df'] = report_df
-                        else:
-                            st.warning("Tidak ada data valid untuk evaluasi akurasi.")
-                            st.session_state['accuracy'] = None
-                            st.session_state['report_df'] = None
+                        accuracy = accuracy_score(data['sentiment'], predictions)
+                        report_dict = classification_report(data['sentiment'], predictions, output_dict=True)
+                        report_df = pd.DataFrame(report_dict).transpose()  # Konversi ke DataFrame
+
+                        st.session_state['accuracy'] = accuracy
+                        st.session_state['report_df'] = report_df
                     else:
                         st.session_state['accuracy'] = None
                         st.session_state['report_df'] = None
 
-                    # Tampilkan hasil prediksi
+                # Tampilkan hasil prediksi dan evaluasi jika tersedia di session_state
+                if 'predictions' in st.session_state:
+                    data = st.session_state['data']
+                    predictions = st.session_state['predictions']
+                    data['predicted sentiment'] = predictions
+
                     st.subheader("Hasil Prediksi Sentimen")
                     st.write(data[['stemming', 'predicted sentiment']])
 
-                    # Visualisasi distribusi sentimen (hanya untuk prediksi yang valid)
-                    valid_predictions = data[data['predicted sentiment'] != "Prediksi sentimen tidak ada"]
-                    if not valid_predictions.empty:
-                        sentiment_counts = valid_predictions['predicted sentiment'].value_counts()
-                        fig_bar = px.bar(
-                            sentiment_counts,
-                            x=sentiment_counts.index,
-                            y=sentiment_counts.values,
-                            labels={'x': 'Sentimen', 'y': 'Jumlah'},
-                            title="Distribusi Sentimen"
-                        )
-                        st.plotly_chart(fig_bar)
+                    # Visualisasi distribusi sentimen
+                    sentiment_counts = data['predicted sentiment'].value_counts()
+                    fig_bar = px.bar(
+                        sentiment_counts,
+                        x=sentiment_counts.index,
+                        y=sentiment_counts.values,
+                        labels={'x': 'Sentimen', 'y': 'Jumlah'},
+                        title="Distribusi Sentimen"
+                    )
+                    st.plotly_chart(fig_bar)
 
                     # Evaluasi akurasi jika tersedia
                     if st.session_state['accuracy'] is not None:
@@ -100,7 +96,7 @@ def main():
                         st.subheader("Hasil Klasifikasi")
                         st.table(st.session_state['report_df'])  # Tampilkan laporan dalam bentuk tabel
                     else:
-                        st.warning("Tidak ada data valid untuk menghitung akurasi.")
+                        st.warning("Kolom 'sentiment' tidak ditemukan. Tidak dapat menghitung akurasi.")
 
                     # Tombol untuk mengunduh hasil prediksi
                     st.download_button(
@@ -110,6 +106,33 @@ def main():
                         mime="text/csv"
                     )
 
+                # Fitur pencarian kata
+                st.subheader("Cari Kata dan Prediksi Sentimen")
+                search_query = st.text_input("Masukkan kata/frase untuk diprediksi")
+                if search_query:
+                    # Cari kata/frase dalam data yang diunggah
+                    matching_rows = data[data['stemming'].str.contains(search_query, case=False, na=False)]
+
+                    if not matching_rows.empty:
+                        st.write("Hasil pencarian dalam data:")
+                        st.write(matching_rows[['stemming', 'predicted sentiment']])
+                    else:
+                        # Jika kata/frase tidak ditemukan, berikan keterangan "Prediksi sentimen tidak ada"
+                        if search_query.strip() == "":
+                            st.warning("Kata/frase yang dimasukkan kosong.")
+                        else:
+                            try:
+                                # Transformasi kata/frase menggunakan vectorizer
+                                query_vectorized = vectorizer.transform([search_query])
+
+                                # Prediksi sentimen kata/frase
+                                query_prediction = model.predict(query_vectorized)[0]
+
+                                # Tampilkan hasil prediksi
+                                st.write(f"Kata/frase: **{search_query}**")
+                                st.write(f"Prediksi Sentimen: **{query_prediction}**")
+                            except Exception as e:
+                                st.error("Prediksi sentimen tidak ada.")
             else:
                 st.error("Kolom 'stemming' tidak ditemukan dalam file yang diunggah.")
 
