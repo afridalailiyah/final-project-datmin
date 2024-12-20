@@ -117,22 +117,20 @@ def main():
                         st.write("Hasil pencarian dalam data:")
                         st.write(matching_rows[['stemming', 'predicted sentiment']])
                     else:
-                        # Jika kata/frase tidak ditemukan, berikan keterangan "Prediksi sentimen tidak ada"
-                        if search_query.strip() == "":
-                            st.warning("Kata/frase yang dimasukkan kosong.")
-                        else:
-                            try:
-                                # Transformasi kata/frase menggunakan vectorizer
-                                query_vectorized = vectorizer.transform([search_query])
+                        # Transformasi kata/frase menggunakan vectorizer jika tidak ditemukan di data
+                        try:
+                            query_vectorized = vectorizer.transform([search_query])
 
-                                # Prediksi sentimen kata/frase
-                                query_prediction = model.predict(query_vectorized)[0]
+                            # Prediksi sentimen kata/frase
+                            query_prediction = model.predict(query_vectorized)[0]
 
-                                # Tampilkan hasil prediksi
-                                st.write(f"Kata/frase: **{search_query}**")
-                                st.write(f"Prediksi Sentimen: **{query_prediction}**")
-                            except Exception as e:
-                                st.error("Prediksi sentimen tidak ada.")
+                            # Tampilkan hasil prediksi
+                            st.write(f"Kata/frase: **{search_query}**")
+                            st.write(f"Prediksi Sentimen: **{query_prediction}**")
+                        except Exception as e:
+                            # Jika tidak bisa diproses oleh model/vectorizer
+                            st.write(f"Kata/frase: **{search_query}**")
+                            st.write("Prediksi Sentimen: **Prediksi sentimen tidak ada**")
             else:
                 st.error("Kolom 'stemming' tidak ditemukan dalam file yang diunggah.")
 
