@@ -127,7 +127,6 @@ def main():
                         st.write(f"Kata/frase: **{search_query}**")
                         st.write(f"Prediksi Sentimen: **{query_prediction}**")
             else:
-            else:
                 st.error("Kolom 'stemming' tidak ditemukan dalam file yang diunggah.")
 
 if __name__ == '__main__':
